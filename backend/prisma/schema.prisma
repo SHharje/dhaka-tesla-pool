@@ -1,0 +1,103 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+}
+
+enum RideStatus {
+  REQUESTED
+  MATCHED
+  DRIVER_ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum Zone {
+  BANANI
+  GULSHAN_1
+  GULSHAN_2
+  MOHAKHALI
+  DHANMONDI
+  MIRPUR
+  UTTARA
+  FARMGATE
+  BASHUNDHARA
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  vehicle      Vehicle?
+  rideRequests RideRequest[]
+}
+
+model Vehicle {
+  id       String  @id @default(uuid())
+  driverId String  @unique
+  driver   User    @relation(fields: [driverId], references: [id])
+  name     String
+  capacity Int
+  online   Boolean @default(false)
+  pools    Pool[]
+}
+
+model Pool {
+  id            String     @id @default(uuid())
+  vehicleId     String
+  vehicle       Vehicle    @relation(fields: [vehicleId], references: [id])
+  status        RideStatus @default(REQUESTED)
+  seatsOccupied Int        @default(0)
+  createdAt     DateTime   @default(now())
+
+  rideRequests  RideRequest[]
+}
+
+model RideRequest {
+  id              String     @id @default(uuid())
+  passengerId     String
+  passenger       User       @relation(fields: [passengerId], references: [id])
+  poolId          String?
+  pool            Pool?      @relation(fields: [poolId], references: [id])
+  pickupZone      Zone
+  destinationZone Zone
+  seatsRequested  Int
+  status          RideStatus @default(REQUESTED)
+  createdAt       DateTime   @default(now())
+
+  fare            Fare?
+  statusHistory   StatusHistory[]
+}
+
+model Fare {
+  id                   String      @id @default(uuid())
+  rideRequestId        String      @unique
+  rideRequest          RideRequest @relation(fields: [rideRequestId], references: [id])
+  baseFarePoysha       Int
+  distanceChargePoysha Int
+  poolDiscountPoysha   Int
+  totalPoysha          Int
+}
+
+model StatusHistory {
+  id            String      @id @default(uuid())
+  rideRequestId String
+  rideRequest   RideRequest @relation(fields: [rideRequestId], references: [id])
+  fromStatus    RideStatus?
+  toStatus      RideStatus
+  actor         String
+  changedAt     DateTime    @default(now())
+}
