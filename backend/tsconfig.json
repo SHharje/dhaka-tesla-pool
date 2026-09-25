@@ -10,7 +10,6 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "src",
-        "prisma"
+        "src"
     ]
 }
