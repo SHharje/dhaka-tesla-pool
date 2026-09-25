@@ -19,7 +19,7 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 - ⬜ Prisma schema: User, Vehicle, Pool, RideRequest, Fare, StatusHistory
 - ⬜ Migrations run inside Docker
 - ⬜ Seed script: Jashim/Bullet/Nusrat/Rafiq/Shirin
-- ⬜ Auth: signup/login (passenger + driver), JWT + bcrypt
+- ✅ Auth: signup/login (passenger + driver), JWT + bcrypt
 - ⬜ Ride request endpoint + matching logic (rules.md §3)
 - ⬜ Fare calculation (rules.md §4) + unit tests against the worked example
 - ⬜ State transition endpoints + validation (rules.md §1)
@@ -86,9 +86,9 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 |---|---|---|
 | `master` | integration | 🔄 |
 | `feature/project-skeleton` | Day 0 scaffolding | ⬜ |
-| `feature/passenger-auth` | auth endpoints | ⬜ |
+| `feature/passenger-auth` | auth endpoints | 🔄 |
 | `feature/tesla-pooling` | matching + pool + capacity | ⬜ |
-| `feature/driver-flow` | driver endpoints | ⬜ |
+| `feature/driver-vehicle` | driver vehicle & request endpoints | 🔄 |
 | `feature/frontend-passenger` | passenger UI | ⬜ |
 | `feature/frontend-driver` | driver UI | ⬜ |
 | `pre-release` | integration fixes | ⬜ |
