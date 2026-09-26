@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { createRideRequest } from '../services/ride.service';
+import { cancelRide } from '../services/lifecycle.service';
 import { Zone } from '../generated/prisma/enums';
 
 const VALID_ZONES = Object.values(Zone);
@@ -106,4 +107,28 @@ export async function getRide(req: Request, res: Response): Promise<void> {
             } : null,
         },
     });
+}
+
+export async function cancelRideHandler(req: Request, res: Response): Promise<void> {
+    const user = req.user!;
+    const id = req.params.id as string;
+
+    if (!id) {
+        res.status(400).json({ error: 'Ride request ID is required' });
+        return;
+    }
+
+    const result = await cancelRide(user.userId, user.role, id);
+
+    if ('code' in result) {
+        const statusMap: Record<string, number> = {
+            NOT_FOUND: 404,
+            FORBIDDEN: 403,
+            INVALID_TRANSITION: 409,
+        };
+        res.status(statusMap[result.code] || 500).json({ error: result.message });
+        return;
+    }
+
+    res.json(result);
 }

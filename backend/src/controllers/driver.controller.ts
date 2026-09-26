@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { toggleVehicleOnline, getRequestedRides } from '../services/driver.service';
 import { acceptRideRequest } from '../services/pool.service';
+import { advanceRide, cancelRide } from '../services/lifecycle.service';
+import { RideStatus } from '../generated/prisma/enums';
 
 export async function patchOnline(req: Request, res: Response): Promise<void> {
     const user = req.user!;
@@ -68,6 +70,122 @@ export async function acceptRide(req: Request, res: Response): Promise<void> {
         };
         const status = statusMap[result.code] || 500;
         res.status(status).json({ error: result.message });
+        return;
+    }
+
+    res.json(result);
+}
+
+export async function arriveRide(req: Request, res: Response): Promise<void> {
+    const user = req.user!;
+
+    if (user.role !== 'DRIVER') {
+        res.status(403).json({ error: 'Only drivers can access this route' });
+        return;
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        res.status(400).json({ error: 'Ride request ID is required' });
+        return;
+    }
+
+    const result = await advanceRide(user.userId, id as string, RideStatus.DRIVER_ARRIVED);
+
+    if ('code' in result) {
+        const statusMap: Record<string, number> = {
+            NOT_FOUND: 404,
+            FORBIDDEN: 403,
+            INVALID_TRANSITION: 409,
+        };
+        res.status(statusMap[result.code] || 500).json({ error: result.message });
+        return;
+    }
+
+    res.json(result);
+}
+
+export async function startRide(req: Request, res: Response): Promise<void> {
+    const user = req.user!;
+
+    if (user.role !== 'DRIVER') {
+        res.status(403).json({ error: 'Only drivers can access this route' });
+        return;
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        res.status(400).json({ error: 'Ride request ID is required' });
+        return;
+    }
+
+    const result = await advanceRide(user.userId, id as string, RideStatus.STARTED);
+
+    if ('code' in result) {
+        const statusMap: Record<string, number> = {
+            NOT_FOUND: 404,
+            FORBIDDEN: 403,
+            INVALID_TRANSITION: 409,
+        };
+        res.status(statusMap[result.code] || 500).json({ error: result.message });
+        return;
+    }
+
+    res.json(result);
+}
+
+export async function completeRide(req: Request, res: Response): Promise<void> {
+    const user = req.user!;
+
+    if (user.role !== 'DRIVER') {
+        res.status(403).json({ error: 'Only drivers can access this route' });
+        return;
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        res.status(400).json({ error: 'Ride request ID is required' });
+        return;
+    }
+
+    const result = await advanceRide(user.userId, id as string, RideStatus.COMPLETED);
+
+    if ('code' in result) {
+        const statusMap: Record<string, number> = {
+            NOT_FOUND: 404,
+            FORBIDDEN: 403,
+            INVALID_TRANSITION: 409,
+        };
+        res.status(statusMap[result.code] || 500).json({ error: result.message });
+        return;
+    }
+
+    res.json(result);
+}
+
+export async function cancelDriverRide(req: Request, res: Response): Promise<void> {
+    const user = req.user!;
+
+    if (user.role !== 'DRIVER') {
+        res.status(403).json({ error: 'Only drivers can access this route' });
+        return;
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        res.status(400).json({ error: 'Ride request ID is required' });
+        return;
+    }
+
+    const result = await cancelRide(user.userId, 'DRIVER', id as string);
+
+    if ('code' in result) {
+        const statusMap: Record<string, number> = {
+            NOT_FOUND: 404,
+            FORBIDDEN: 403,
+            INVALID_TRANSITION: 409,
+        };
+        res.status(statusMap[result.code] || 500).json({ error: result.message });
         return;
     }
 

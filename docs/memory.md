@@ -200,6 +200,20 @@
 - Alternatives considered: Discounting total subtotal (earlier draft assumption) superseded.
 - Status: Active — supersedes [2026-09-26] Pool discount: 15% of (base + distance)
 
+### [2026-09-26] Ride Lifecycle State Machine & History
+- Decision: Strict state machine defined in `src/utils/lifecycle.ts`.
+  - Transitions allowed: REQUESTED -> MATCHED, MATCHED -> DRIVER_ARRIVED,
+    DRIVER_ARRIVED -> STARTED, STARTED -> COMPLETED.
+  - CANCELLED allowed only from REQUESTED, MATCHED, DRIVER_ARRIVED.
+  - Any invalid transition attempt is rejected with 409 Conflict naming current and
+    attempted status ("Cannot transition from <from> to <to>").
+  - Driver advance endpoints (`PATCH /driver/rides/:id/arrive`, `/start`, `/complete`)
+    restricted to the driver who owns the assigned vehicle (403 for other drivers).
+  - Every transition writes a `StatusHistory` record tracking `fromStatus`, `toStatus`,
+    `actor` (userId + role), and timestamp `changedAt`.
+- Context/reason: Satisfies PRD §1 lifecycle and audit trail requirements.
+- Status: Active
+
 ---
 
 ## Open Questions Carried From PRD

@@ -67,7 +67,7 @@ export async function acceptRideRequest(
     }
 
     if (rideRequest.status !== 'REQUESTED') {
-        return { code: 'ALREADY_MATCHED', message: 'Ride request is no longer available' };
+        return { code: 'ALREADY_MATCHED', message: `Cannot transition from ${rideRequest.status} to MATCHED` };
     }
 
     // 3. Look for an existing compatible pool on this driver's vehicle.
@@ -128,6 +128,7 @@ export async function acceptRideRequest(
 
         return await createNewPool(
             vehicle.id,
+            vehicle.capacity,
             rideRequest,
             driverId,
         );
@@ -182,7 +183,7 @@ async function joinExistingPool(
                 rideRequestId: rideRequest.id,
                 fromStatus: 'REQUESTED',
                 toStatus: 'MATCHED',
-                actor: driverId,
+                actor: `${driverId} (DRIVER)`,
             },
         });
 
@@ -247,9 +248,10 @@ async function joinExistingPool(
  */
 async function createNewPool(
     vehicleId: string,
+    vehicleCapacity: number,
     rideRequest: { id: string; pickupZone: Zone; destinationZone: Zone; seatsRequested: number },
     driverId: string,
-): Promise<AcceptResult> {
+): Promise<AcceptResult | AcceptError> {
     return await prisma.$transaction(async (tx) => {
         // Create the pool with seatsOccupied = 0 initially
         const pool = await tx.pool.create({
@@ -261,12 +263,17 @@ async function createNewPool(
         });
 
         // Atomically set the seats using the same conditional pattern
-        // (for consistency, though race is unlikely on a brand-new pool)
-        await tx.$executeRaw`
+        // (WHERE seatsOccupied + requestedSeats <= capacity)
+        const updatedCount: number = await tx.$executeRaw`
             UPDATE "Pool"
             SET "seatsOccupied" = "seatsOccupied" + ${rideRequest.seatsRequested}
             WHERE id = ${pool.id}
+              AND "seatsOccupied" + ${rideRequest.seatsRequested} <= ${vehicleCapacity}
         `;
+
+        if (updatedCount === 0) {
+            return { code: 'NO_SEATS' as const, message: 'Not enough seats available' };
+        }
 
         // Link ride request to pool and set status
         await tx.rideRequest.update({
@@ -283,7 +290,7 @@ async function createNewPool(
                 rideRequestId: rideRequest.id,
                 fromStatus: 'REQUESTED',
                 toStatus: 'MATCHED',
-                actor: driverId,
+                actor: `${driverId} (DRIVER)`,
             },
         });
 

@@ -22,7 +22,7 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 - ✅ Auth: signup/login (passenger + driver), JWT + bcrypt
 - ✅ Ride request endpoint + matching logic (rules.md §3)
 - ✅ Fare calculation (rules.md §4) + unit tests against the worked example
-- ⬜ State transition endpoints + validation (rules.md §1)
+- ✅ State transition endpoints + validation (rules.md §1)
 - ✅ Concurrency-safe seat claim (rules.md §7) + a test that fires two claims at once
 - ✅ Ownership/authorization checks + a test proving cross-user access is blocked
 - ⬜ Feature branches merged into `master` as each piece passes its tests
@@ -54,10 +54,10 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 
 ### Testing (from PRD §12)
 - ✅ Capacity never exceeded (pool.test.ts TEST 3 — overflow returns 409)
-- ⬜ Invalid state transitions rejected
+- ✅ Invalid state transitions rejected (lifecycle.test.ts — strict 409 enforcement)
 - ✅ Nusrat/Rafiq pooled fare matches hand calculation (seed data + fare.ts)
 - ✅ Cross-user access blocked (pool.test.ts TEST 5 — driver can't use another's vehicle)
-- ⬜ Cancellation rules hold
+- ✅ Cancellation rules hold (lifecycle.test.ts — allowed before START, blocked after)
 - ✅ Concurrent seat claims don't corrupt capacity (pool.test.ts TEST 4 — Promise.all race)
 
 ### README (from PRD §12 / brief §12)
@@ -90,6 +90,7 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 | `feature/tesla-pooling` | matching + pool + capacity | 🔄 |
 | `feature/driver-vehicle` | driver vehicle & request endpoints | ✅ |
 | `feature/fare-calculation` | pure fare model, calculation & recalculation | ✅ |
+| `feature/ride-lifecycle` | state machine, advance & cancellation transitions | ✅ |
 | `feature/frontend-passenger` | passenger UI | ⬜ |
 | `feature/frontend-driver` | driver UI | ⬜ |
 | `pre-release` | integration fixes | ⬜ |

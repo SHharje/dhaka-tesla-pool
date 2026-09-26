@@ -45,7 +45,7 @@ export async function createRideRequest(input: CreateRideInput): Promise<RideReq
                 create: {
                     fromStatus: null,
                     toStatus: 'REQUESTED',
-                    actor: input.passengerId,
+                    actor: `${input.passengerId} (PASSENGER)`,
                 },
             },
         },
