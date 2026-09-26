@@ -6,25 +6,25 @@
 
 Deadline: **2026-09-28**. Started: **2026-09-25**.
 
-## Day 0 — Skeleton (today)
-- ⬜ Install Docker Desktop, confirm `docker run hello-world` works
-- ⬜ Init git repo, create `master`
-- ⬜ Create `/frontend`, `/backend`, root `docker-compose.yml`, `.env.example`
-- ⬜ First `feature/*` branch: `feature/project-skeleton`
-- ⬜ Draft architecture diagram + ERD (done in `architecture.md` — refine as needed)
-- ⬜ `docker compose up` boots Postgres + a backend health-check endpoint successfully
-- ⬜ Merge skeleton into `master`
+## Day 0 — Skeleton
+- ✅ Install Docker Desktop, confirm `docker run hello-world` works
+- ✅ Init git repo, create `master`
+- ✅ Create `/frontend`, `/backend`, root `docker-compose.yml`, `.env.example`
+- ✅ First `feature/*` branch: `feature/project-skeleton`
+- ✅ Draft architecture diagram + ERD (done in `architecture.md` — refine as needed)
+- ✅ `docker compose up` boots Postgres + a backend health-check endpoint successfully
+- ✅ Merge skeleton into `master`
 
 ## Day 1 — Backend end-to-end
-- ⬜ Prisma schema: User, Vehicle, Pool, RideRequest, Fare, StatusHistory
-- ⬜ Migrations run inside Docker
-- ⬜ Seed script: Jashim/Bullet/Nusrat/Rafiq/Shirin
+- ✅ Prisma schema: User, Vehicle, Pool, RideRequest, Fare, StatusHistory
+- ✅ Migrations run inside Docker
+- ✅ Seed script: Jashim/Bullet/Nusrat/Rafiq/Shirin
 - ✅ Auth: signup/login (passenger + driver), JWT + bcrypt
-- ⬜ Ride request endpoint + matching logic (rules.md §3)
-- ⬜ Fare calculation (rules.md §4) + unit tests against the worked example
+- ✅ Ride request endpoint + matching logic (rules.md §3)
+- ✅ Fare calculation (rules.md §4) + unit tests against the worked example
 - ⬜ State transition endpoints + validation (rules.md §1)
-- ⬜ Concurrency-safe seat claim (rules.md §7) + a test that fires two claims at once
-- ⬜ Ownership/authorization checks + a test proving cross-user access is blocked
+- ✅ Concurrency-safe seat claim (rules.md §7) + a test that fires two claims at once
+- ✅ Ownership/authorization checks + a test proving cross-user access is blocked
 - ⬜ Feature branches merged into `master` as each piece passes its tests
 
 ## Day 2 — Frontend end-to-end
@@ -53,12 +53,12 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 - ⬜ Commit messages follow `type(scope): description`
 
 ### Testing (from PRD §12)
-- ⬜ Capacity never exceeded
+- ✅ Capacity never exceeded (pool.test.ts TEST 3 — overflow returns 409)
 - ⬜ Invalid state transitions rejected
-- ⬜ Nusrat/Rafiq pooled fare matches hand calculation
-- ⬜ Cross-user access blocked
+- ✅ Nusrat/Rafiq pooled fare matches hand calculation (seed data + fare.ts)
+- ✅ Cross-user access blocked (pool.test.ts TEST 5 — driver can't use another's vehicle)
 - ⬜ Cancellation rules hold
-- ⬜ Concurrent seat claims don't corrupt capacity
+- ✅ Concurrent seat claims don't corrupt capacity (pool.test.ts TEST 4 — Promise.all race)
 
 ### README (from PRD §12 / brief §12)
 - ⬜ Summary, problem, features, screenshots/GIFs
@@ -85,10 +85,11 @@ Deadline: **2026-09-28**. Started: **2026-09-25**.
 | Branch | Purpose | Status |
 |---|---|---|
 | `master` | integration | 🔄 |
-| `feature/project-skeleton` | Day 0 scaffolding | ⬜ |
-| `feature/passenger-auth` | auth endpoints | 🔄 |
-| `feature/tesla-pooling` | matching + pool + capacity | ⬜ |
-| `feature/driver-vehicle` | driver vehicle & request endpoints | 🔄 |
+| `feature/project-skeleton` | Day 0 scaffolding | ✅ |
+| `feature/passenger-auth` | auth endpoints | ✅ |
+| `feature/tesla-pooling` | matching + pool + capacity | 🔄 |
+| `feature/driver-vehicle` | driver vehicle & request endpoints | ✅ |
+| `feature/fare-calculation` | pure fare model, calculation & recalculation | ✅ |
 | `feature/frontend-passenger` | passenger UI | ⬜ |
 | `feature/frontend-driver` | driver UI | ⬜ |
 | `pre-release` | integration fixes | ⬜ |

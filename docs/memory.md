@@ -78,12 +78,6 @@
 |---|---|---|---|---|
 | | | | | |
 
-## Open Questions Carried From PRD
-
-- [ ] Final matching/corridor rule
-- [ ] Cancellation fee after `DRIVER_ARRIVED`?
-- [ ] Pool discount: flat % vs flat amount
-
 ### [2026-09-25] Database hosting: local Docker Postgres + Neon for deployment
 - Decision: Local dev/evaluation uses the Docker Compose Postgres container (satisfies
   the brief's requirement for a self-contained DB container). Deployed backend points
@@ -140,3 +134,76 @@
   the connection string must live solely in prisma.config.ts, with the client
   constructed via a driver adapter instead.
 - Status: Active
+
+### [2026-09-26] Corridor rule finalized
+- Decision: Corridor matching uses hardcoded zone-set lookup. Two requests are
+  poolable if same pickupZone AND destinationZones share a corridor set.
+  Corridors: BANANI=[BANANI,MOHAKHALI,GULSHAN_1,GULSHAN_2],
+  GULSHAN_1=[GULSHAN_1,BANANI,GULSHAN_2,MOHAKHALI],
+  MOHAKHALI=[MOHAKHALI,BANANI,FARMGATE]. All others = self only (no pooling).
+- Context/reason: Symmetric corridor check ensures Nusrat (→Mohakhali) and
+  Rafiq (→Gulshan_1) can pool from Banani. UTTARA/DHANMONDI/MIRPUR etc. are
+  isolated — no cross-city pooling without real routing data.
+- Alternatives considered: Distance-based matching (needs map API, out of scope),
+  same-destination-only (too strict per brief).
+- Status: Active — resolves Open Question "Final matching/corridor rule"
+
+### [2026-09-26] Pool discount: 15% of (base + distance)
+- Decision: Pool discount = 15% of (baseFare + distanceCharge), applied when
+  ride is created as an estimate. Stored in integer poysha.
+- Context/reason: The seed data shows Nusrat/Rafiq each paying 4250 poysha
+  (base 2000 + distance 3000 − discount 750). 750 / 5000 = 15%.
+  Using percentage rather than flat amount scales correctly across different
+  zone-pair distances.
+- Alternatives considered: 25% of distanceCharge only (per rules.md draft —
+  but seed data implies 15% of total subtotal, so we matched the seed).
+- Status: Superseded by [2026-09-26] Final Fare Model (25% of distanceCharge)
+
+### [2026-09-26] Fare distance tiers
+- Decision: Simplified 3-tier distance charge: same zone = 1500 poysha,
+  adjacent zone = 3000 poysha, cross-city = 5000 poysha. Adjacent zones
+  defined via a lookup table matching Dhaka geography roughly.
+- Context/reason: No real routing API available. The seed data consistently
+  uses 3000 poysha for Banani→Mohakhali and Banani→Gulshan_1 (both adjacent),
+  confirming the adjacent-zone tier.
+- Status: Active
+
+### [2026-09-26] Atomic $executeRaw for capacity — implementation confirmed
+- Decision: Seat capacity enforced via `$executeRaw` inside `prisma.$transaction`:
+  `UPDATE "Pool" SET "seatsOccupied" = "seatsOccupied" + $n WHERE id = $id AND
+  "seatsOccupied" + $n <= $capacity`. Check rows-affected: 0 = 409 Conflict.
+- Context/reason: This matches the architecture.md §5 design exactly. The
+  concurrency test (Promise.all with two simultaneous accepts) proves exactly
+  one succeeds and one gets 409. No read-then-write pattern.
+- Status: Active — implementation matches spec
+
+### [2026-09-26] Pool membership via RideRequest.poolId FK (no separate join table)
+- Decision: Use the existing `poolId` FK on `RideRequest` as the pool membership
+  link, rather than adding a separate `PoolMembership` model.
+- Context/reason: The schema already has `RideRequest.poolId → Pool.id` and
+  `Pool.rideRequests[]`. A separate join table would add complexity with no
+  benefit — there's no extra metadata on the membership beyond what RideRequest
+  already carries (status, seats, timestamps).
+- Status: Active
+
+### [2026-09-26] Final Fare Model: 25% of distanceCharge when pooled
+- Decision: Implement exact formula `passengerFare = baseFare + distanceCharge - poolDiscount`.
+  - `baseFare = 2000` integer poysha flat.
+  - `distanceCharge = 3000` poysha if pickupZone & destinationZone share a corridor (1 hop),
+    `5000` poysha otherwise (2 hops).
+  - `poolDiscount = 25%` of `distanceCharge` (standard rounded via `Math.round`) ONLY when
+    the ride's pool has `seatsOccupied > 1` at calculation time; `0` if solo.
+  - Estimated at ride creation (`POST /rides`) and recalculated/finalized upon driver acceptance
+    (`POST /driver/rides/:id/accept`) for all members in the pool.
+- Context/reason: Reconciles cleanly with worked example: Nusrat & Rafiq each pay 2000 + 3000 - 750 = 4250 poysha;
+  solo Banani->Mohakhali pays 2000 + 3000 - 0 = 5000 poysha.
+- Alternatives considered: Discounting total subtotal (earlier draft assumption) superseded.
+- Status: Active — supersedes [2026-09-26] Pool discount: 15% of (base + distance)
+
+---
+
+## Open Questions Carried From PRD
+
+- [x] Final matching/corridor rule — **resolved 2026-09-26** (see entry above)
+- [ ] Cancellation fee after `DRIVER_ARRIVED`? — probably no for MVP
+- [x] Pool discount: flat % vs flat amount — **resolved 2026-09-26**: 25% of distanceCharge when pooled (seatsOccupied > 1)

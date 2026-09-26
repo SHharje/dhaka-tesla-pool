@@ -3,6 +3,7 @@ import cors from 'cors';
 import { prisma } from './lib/prisma';
 import authRoutes from './routes/auth.routes';
 import driverRoutes from './routes/driver.routes';
+import rideRoutes from './routes/ride.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 
 const app = express();
@@ -23,6 +24,9 @@ app.use('/auth', authRoutes);
 
 // Driver routes
 app.use('/driver', driverRoutes);
+
+// Ride routes
+app.use('/rides', rideRoutes);
 
 // Protected test route
 app.get('/protected', authMiddleware, (req, res) => {
